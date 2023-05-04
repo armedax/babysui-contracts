@@ -4,8 +4,8 @@ version = "0.0.1"
 
 [dependencies]
 Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "testnet" }
-Movemate = { local = "../movemate" }
-BABYSUI = { local = "../babysui" }
+Movemate = { git = "https://github.com/armedax/babysui-contracts", subdir = "movemate", rev = "main" }
+BABYSUI = { git = "https://github.com/armedax/babysui-contracts", subdir = "babysui", rev = "main" }
 
 [addresses]
 airdrop =  "0x0"
