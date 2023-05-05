@@ -1,11 +1,11 @@
 [package]
 name = "BABYSUI"
 version = "0.0.1"
-published-at = "0x0"
+published-at = "0x545603b828ccde8a8685b374edd7016f61fc470cf6cf1111b9ce940234897128"
 
 [dependencies]
 Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "testnet" }
 
 [addresses]
-babysui =  "0x0"
+babysui =  "0x545603b828ccde8a8685b374edd7016f61fc470cf6cf1111b9ce940234897128"
 sui =  "0x2"
