@@ -13,7 +13,7 @@ module airdrop::core {
 
   use babysui::babysui::{BABYSUI};
 
-  use movemate::merkle_proof;
+  use library::merkle_proof;
 
   const ERROR_INVALID_PROOF: u64 = 0;
   const ERROR_ALL_CLAIMED: u64 = 1;
