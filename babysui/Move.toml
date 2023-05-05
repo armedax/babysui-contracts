@@ -1,10 +1,10 @@
 [package]
 name = "BABYSUI"
 version = "0.0.1"
+published-at = "0x0"
 
 [dependencies]
 Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "testnet" }
-Library = { git = "https://github.com/armedax/babysui-contracts", rev = "main", subdir = "library" }
 
 [addresses]
 babysui =  "0x0"

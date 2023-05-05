@@ -15,13 +15,12 @@ module airdrop::core {
 
   use movemate::merkle_proof;
 
-  const THIRTY_DAYS_IN_MS: u64 = 2592000000;
-
   const ERROR_INVALID_PROOF: u64 = 0;
   const ERROR_ALL_CLAIMED: u64 = 1;
   const ERROR_NOT_STARTED: u64 = 2;
-  const ERROR_NO_ROOT: u64 = 3;
-  const ERROR_EXCEED_CLAIMABLE: u64 = 4;
+  const ERROR_HAS_ENDED: u64 = 3;
+  const ERROR_NO_ROOT: u64 = 4;
+  const ERROR_EXCEED_CLAIMABLE: u64 = 5;
 
   struct AirdropAdminCap has key {
     id: UID
@@ -36,6 +35,7 @@ module airdrop::core {
     balance: Balance<BABYSUI>,
     root: vector<u8>,
     start_time: u64,
+    end_time: u64,
     accounts: VecMap<address, Account>,
     amount_per_user: u64
   }
@@ -54,6 +54,7 @@ module airdrop::core {
         balance: balance::zero<BABYSUI>(),
         root: vector::empty(),
         start_time: 0,
+        end_time: 0,
         accounts: vec_map::empty(),
         amount_per_user: 0
       }
@@ -62,11 +63,13 @@ module airdrop::core {
 
   public fun get_airdrop(
     storage: &mut AirdropStorage, 
+    clock: &Clock,
     proof: vector<vector<u8>>, 
     amount: u64, 
     ctx: &mut TxContext
   ): Coin<BABYSUI> {
     assert!(storage.start_time != 0, ERROR_NOT_STARTED);
+    assert!(clock::timestamp_ms(clock) < storage.end_time, ERROR_HAS_ENDED);
     assert!(storage.amount_per_user >= amount, ERROR_EXCEED_CLAIMABLE);
     assert!(!vector::is_empty(&storage.root), ERROR_NO_ROOT);
 
@@ -83,11 +86,12 @@ module airdrop::core {
     account.claimed = true;
     assert!(account.claimed, ERROR_ALL_CLAIMED);
 
-    coin::take(&mut storage.balance, amount_to_send, ctx)
+    coin::take(&mut storage.balance, amount, ctx)
   }
 
   entry fun airdrop(
     storage: &mut AirdropStorage, 
+    clock: &Clock,
     proof: vector<vector<u8>>, 
     amount: u64, 
     ctx: &mut TxContext
@@ -95,6 +99,7 @@ module airdrop::core {
     transfer::public_transfer(
       get_airdrop(
         storage,
+        clock,
         proof,
         amount,
         ctx
@@ -116,12 +121,24 @@ module airdrop::core {
     root: vector<u8>, 
     coin_babysui: Coin<BABYSUI>, 
     start_time: u64, 
+    end_time: u64, 
     amount_per_user: u64
   ) {
     storage.root = root;
     balance::join(&mut storage.balance, coin::into_balance(coin_babysui));
     storage.start_time = start_time;
+    storage.end_time = end_time;
     storage.amount_per_user = amount_per_user;
+  }
+
+  entry public fun withdraw_tokens(
+    _: &AirdropAdminCap, 
+    storage: &mut AirdropStorage, 
+    ctx: &mut TxContext
+  ) { 
+    let amount = balance::value(&storage.balance);
+    let split_amount = balance::split(&mut storage.balance, amount);
+    transfer::public_transfer(coin::from_balance(split_amount, ctx), tx_context::sender(ctx));
   }
 
   public fun has_claimed(storage: &AirdropStorage, user: address): bool {
@@ -130,7 +147,13 @@ module airdrop::core {
     account.claimed
   }
 
-  public fun read_airdrop_storage(storage: &AirdropStorage): (u64, vector<u8>, u64, u64) {
-    (balance::value(&storage.balance), storage.root, storage.start_time, storage.amount_per_user)
+  public fun read_storage(storage: &AirdropStorage): (u64, vector<u8>, u64, u64, u64) {
+    (
+      balance::value(&storage.balance), 
+      storage.root, 
+      storage.start_time, 
+      storage.end_time, 
+      storage.amount_per_user
+    )
   }
 }
